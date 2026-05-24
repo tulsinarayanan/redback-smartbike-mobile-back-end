@@ -1,8 +1,8 @@
 import express from 'express';
+import { searchUsers } from '../controllers/userController.js';
+
 const router = express.Router();
 
-router.get("/", (req, res) => {
-    res.json({ message: "User route working" });
-});
+router.get('/search', searchUsers);
 
 export default router;

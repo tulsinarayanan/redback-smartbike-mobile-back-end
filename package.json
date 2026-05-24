@@ -13,10 +13,11 @@
         "url": "git+https://github.com/yjsjade/redback-smartbike-mobile-back-end.git"
     },
     "dependencies": {
-        "@supabase/supabase-js": "^2.99.3",
+        "@supabase/supabase-js": "^2.106.1",
         "cors": "^2.8.6",
         "dotenv": "^17.3.1",
-        "express": "^5.2.1"
+        "express": "^5.2.1",
+        "mqtt": "^5.15.1"
     },
     "devDependencies": {
         "nodemon": "^3.1.14"

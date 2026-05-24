@@ -1,0 +1,26 @@
+-- Optional demo seed notes for SmartBike.
+-- Do not run this before creating users through Supabase Auth.
+--
+-- Recommended demo flow:
+-- 1. Create demo users in Supabase Authentication.
+-- 2. Sign in/sign up from the app once for each demo user so the frontend
+--    creates public.profiles rows.
+-- 3. Use the SQL below only after replacing the placeholder UUIDs with real
+--    public.profiles.id values from the company Supabase project.
+--
+-- Example only:
+--
+-- insert into public.friendships (requester_id, addressee_id, status)
+-- values
+--   ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 'accepted')
+-- on conflict do nothing;
+--
+-- insert into public.rides (user_id, start_time, end_time, duration, distance, avg_speed, calories)
+-- values
+--   ('00000000-0000-0000-0000-000000000001', now() - interval '2 days', now() - interval '2 days' + interval '30 minutes', 1800, 12.4, 24.8, 245),
+--   ('00000000-0000-0000-0000-000000000002', now() - interval '1 day', now() - interval '1 day' + interval '25 minutes', 1500, 8.7, 20.9, 172);
+--
+-- insert into public.conversations default values
+-- returning id;
+--
+-- Use the returned conversation id to insert participants and messages.
