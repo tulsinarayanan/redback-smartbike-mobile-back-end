@@ -114,27 +114,3 @@ Supported payload examples:
 
 Payloads are mapped into `sensor_data` using available fields: `speed`, `cadence`, `heart_rate.bpm`, `power`, and `timestamp` from `ts` or `timestamp`. `ride_id` is `null` unless a valid `ride_id` is supplied.
 
-Test without hardware:
-
-```bash
-curl http://localhost:5000/api/iot/status
-```
-
-```bash
-curl -X POST http://localhost:5000/api/iot/simulate \
-  -H "Content-Type: application/json" \
-  -d "{\"topic\":\"bike/000001/control\",\"payload\":{\"device\":\"000001\",\"speed\":22.4,\"ts\":1710000000000},\"dryRun\":true}"
-```
-
-## Verification
-
-```bash
-node --check app.js
-node --check controllers/chatController.js
-node --check controllers/friendsController.js
-node --check controllers/iotController.js
-node --check controllers/leaderboardController.js
-node --check controllers/notificationsController.js
-node --check controllers/userController.js
-node --check services/mqttService.js
-```
