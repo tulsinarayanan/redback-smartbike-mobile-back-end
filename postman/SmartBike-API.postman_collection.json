@@ -1,0 +1,1136 @@
+{
+  "info": {
+    "name": "SmartBike Mobile Backend API",
+    "description": "Endpoint tests for the redback-smartbike-mobile-back-end Express API. Validation requests need no data. Happy-path requests read from your Supabase project. Write requests run only when the environment variable runWrites is 'true' and userId/otherUserId are real profiles.id values.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Global",
+      "item": [
+        {
+          "name": "Unknown API route -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/does-not-exist",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "does-not-exist"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('is JSON', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('API route not found'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid JSON body -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"broken\": "
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('is JSON', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('Invalid JSON body'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List users -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('is JSON', function () { pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json'); });",
+                  "var body = pm.response.json();",
+                  "pm.test('success true', function () { pm.expect(body.success).to.be.true; });",
+                  "pm.test('users is array', function () { pm.expect(body.users).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create user missing fields -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('id and email are required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create user invalid UUID -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"id\": \"not-a-uuid\", \"email\": \"test@example.com\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search missing current_user_id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/search?q=rider",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "search"],
+              "query": [{ "key": "q", "value": "rider" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('current_user_id is required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search invalid current_user_id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/search?q=rider&current_user_id=bad",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "search"],
+              "query": [
+                { "key": "q", "value": "rider" },
+                { "key": "current_user_id", "value": "bad" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('current_user_id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search empty query -> 200 []",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/search?q=&current_user_id={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "search"],
+              "query": [
+                { "key": "q", "value": "" },
+                { "key": "current_user_id", "value": "{{userId}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('empty array', function () { pm.expect(pm.response.json()).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Leaderboard",
+      "item": [
+        {
+          "name": "Get leaderboard -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/leaderboard?filter=all-time&sort_by=points",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "leaderboard"],
+              "query": [
+                { "key": "filter", "value": "all-time" },
+                { "key": "sort_by", "value": "points" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('success true', function () { pm.expect(body.success).to.be.true; });",
+                  "pm.test('leaderboard is array', function () { pm.expect(body.leaderboard).to.be.an('array'); });",
+                  "pm.test('echoes filter/sort', function () { pm.expect(body.filter).to.eql('all-time'); pm.expect(body.sort_by).to.eql('points'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User rank invalid UUID -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/leaderboard/user/bad",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "leaderboard", "user", "bad"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Friends",
+      "item": [
+        {
+          "name": "Get friends (all) -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/friends",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "friends"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('is array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get friends invalid user_id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/friends?user_id=bad",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "friends"],
+              "query": [{ "key": "user_id", "value": "bad" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('user_id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Friend requests missing user_id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "friends", "requests"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('user_id is required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create friend request missing fields -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "friends", "request"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('requester_id and addressee_id are required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create friend request to self -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"requester_id\": \"{{userId}}\", \"addressee_id\": \"{{userId}}\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "friends", "request"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('You cannot send a friend request to yourself'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Respond bad action -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"friendship_id\": \"00000000-0000-4000-8000-000000000009\", \"action\": \"maybe\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/friends/respond",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "friends", "respond"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('action must be accept, reject, or block'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Missing user_id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('user_id is required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get notifications -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?user_id={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "notifications"],
+              "query": [{ "key": "user_id", "value": "{{userId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('is array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Conversations missing user_id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/conversations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "conversations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('user_id is required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get conversations -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/conversations?user_id={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "conversations"],
+              "query": [{ "key": "user_id", "value": "{{userId}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('is array', function () { pm.expect(pm.response.json()).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create conversation too few users -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"user_ids\": [\"{{userId}}\"] }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/conversations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "conversations"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('user_ids must include at least two users'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Messages invalid conversation_id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/conversations/bad/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "conversations", "bad", "messages"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('conversation_id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Send message missing conversation_id -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "chat", "messages"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('conversation_id is required'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "IoT",
+      "item": [
+        {
+          "name": "Status -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "iot", "status"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('has mqttEnabled', function () { pm.expect(body).to.have.property('mqttEnabled'); });",
+                  "pm.test('subscribedTopics is array', function () { pm.expect(body.subscribedTopics).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Simulate missing topic -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"payload\": { \"device\": \"000001\" } }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/simulate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "iot", "simulate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('topic is required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Simulate missing payload -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"topic\": \"bike/000001/sensor\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/simulate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "iot", "simulate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('payload must be a JSON object'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Simulate dry run -> 200 ok",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"topic\": \"bike/000001/sensor\", \"dryRun\": true, \"payload\": { \"device\": \"000001\", \"speed\": 20, \"cadence\": 80 } }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/iot/simulate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "iot", "simulate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('ok true', function () { pm.expect(body.ok).to.be.true; });",
+                  "pm.test('not inserted (dry run)', function () { pm.expect(body.inserted).to.be.false; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "List posts -> 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.test('success true', function () { pm.expect(body.success).to.be.true; });",
+                  "pm.test('posts is array', function () { pm.expect(body.posts).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get post invalid id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/bad",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "bad"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create post missing fields -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('user_id and content are required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Post comments invalid id -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/bad/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "bad", "comments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Create comment missing fields -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "comments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('post_id, user_id, and comment_text are required'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create comment invalid UUID -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"post_id\": \"bad\", \"user_id\": \"bad\", \"comment_text\": \"hi\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "comments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('post_id and user_id must be valid UUIDs'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete comment invalid id -> 400",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/comments/bad",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "comments", "bad"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('message matches', function () { pm.expect(pm.response.json().message).to.eql('id must be a valid UUID'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Write flow (optional)",
+      "description": "Runs only when environment variable runWrites is 'true' and userId is a real profiles.id. Creates a post, comments on it, then deletes both.",
+      "item": [
+        {
+          "name": "Create post",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"user_id\": \"{{userId}}\", \"content\": \"Newman smoke test post\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts"]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('runWrites') !== 'true') {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "pm.test('success true', function () { pm.expect(body.success).to.be.true; });",
+                  "if (body.post && body.post.id) { pm.environment.set('postId', body.post.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{ \"post_id\": \"{{postId}}\", \"user_id\": \"{{userId}}\", \"comment_text\": \"Newman smoke test comment\" }"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "comments"]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('runWrites') !== 'true' || !pm.environment.get('postId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "var body = pm.response.json();",
+                  "if (body.comment && body.comment.id) { pm.environment.set('commentId', body.comment.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete comment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/comments/{{commentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "comments", "{{commentId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('runWrites') !== 'true' || !pm.environment.get('commentId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('success true', function () { pm.expect(pm.response.json().success).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete post",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/posts/{{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "posts", "{{postId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.environment.get('runWrites') !== 'true' || !pm.environment.get('postId')) {",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('success true', function () { pm.expect(pm.response.json().success).to.be.true; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

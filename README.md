@@ -54,7 +54,7 @@ The main additions are:
 
 ## API Endpoints
 
-- `GET /api/leaderboard?timeframe=daily|weekly|monthly`
+- `GET /api/leaderboard?filter=daily|weekly|all-time&sort_by=points|distance|speed`
 - `GET /api/friends?user_id=<profile-id>`
 - `GET /api/users/search?q=<query>&current_user_id=<profile-id>`
 - `GET /api/friends/requests?user_id=<profile-id>`
@@ -69,6 +69,54 @@ The main additions are:
 - `POST /api/iot/simulate`
 
 All API errors should return JSON.
+
+## API Tests (Postman + Newman)
+
+A Postman collection covering every endpoint lives in [`postman/`](postman/):
+
+- `postman/SmartBike-API.postman_collection.json` - requests and assertions
+- `postman/local.postman_environment.json` - `baseUrl` plus demo variables
+
+The suite has two kinds of requests:
+
+- Validation checks (missing fields, invalid UUIDs, bad JSON, unknown routes). These need no data.
+- Happy-path reads (users, leaderboard, friends, notifications, posts, IoT status/dry-run). These hit your Supabase project, so `database/schema.sql` must be applied.
+
+### Run locally
+
+1. Ensure `.env` has `SUPABASE_URL` and `SUPABASE_ANON_KEY`.
+2. Start the server:
+
+   ```bash
+   npm start
+   ```
+
+3. In another terminal, run the tests:
+
+   ```bash
+   npm run test:api
+   ```
+
+To also exercise the create/delete write flow (post + comment), set real
+`public.profiles.id` values as `userId` / `otherUserId` in the environment file,
+then run:
+
+```bash
+npm run test:api:writes
+```
+
+To force the write flow without using `npm run test:api:writes`:
+
+```bash
+RUN_WRITES=true npm run test:api
+```
+
+### Run in CI
+
+[`.github/workflows/api-tests.yml`](.github/workflows/api-tests.yml) runs the
+same collection on every pull request. Add repository secrets `SUPABASE_URL` and
+`SUPABASE_ANON_KEY` (Settings > Secrets and variables > Actions) so the server
+can boot in CI.
 
 ## Company Supabase Setup
 
