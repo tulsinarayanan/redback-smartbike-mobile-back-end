@@ -12,6 +12,7 @@ import progressionRoutes from './routes/progressionRoutes.js';
 import rideRoutes from './routes/rideRoutes.js';
 import mlRoutes from './routes/mlRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
+import ridesRoutes from './routes/ridesRoutes.js';
 import { startMqttService } from './services/mqttService.js';
 import { initTelemetrySocket } from './sockets/telemetrySocket.js';
 import { flushAllSync } from './services/telemetryBuffer.js';
@@ -34,12 +35,14 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/iot', iotRoutes);
 app.use('/api/progression', progressionRoutes);
+app.use('/api/rides', ridesRoutes);
 app.use('/api/rides', rideRoutes);
 app.use('/api/workouts', rideRoutes);
 app.use('/api/ml', mlRoutes);
 app.use('/api/ai', aiRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', port: PORT }));
+// app.use('/api/dashboard', dashboardRoutes);
 
 app.use('/api', (req, res) => {
   return res.status(404).json({ message: 'API route not found' });
@@ -84,3 +87,5 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 export { app, httpServer, io };
 export default app;
+
+

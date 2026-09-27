@@ -36,6 +36,22 @@ npm start
 
 The server defaults to port `5000`.
 
+
+## Smart Ride Dashboard APIs
+
+Unity dashboard integration endpoints are documented in:
+
+`docs/dashboard-apis.md`
+
+The main additions are:
+
+- `POST /api/rides/start`
+- `POST /api/rides/:ride_id/end`
+- `GET /api/rides/:ride_id`
+- `GET /api/dashboard/hud`
+- `GET /api/dashboard/summary`
+- `GET /api/dashboard/ride/:ride_id`
+
 ## API Endpoints
 
 - `GET /api/leaderboard?timeframe=daily|weekly|monthly`
